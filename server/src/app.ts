@@ -11,7 +11,7 @@ import { VegapullImporter } from './scripts/import-vegapull-data.js';
 import { BoosterModel } from './models/Booster.js';
 import { AchievementService } from './services/AchievementService.js';
 import { AchievementModel } from './models/Achievement.js';
-import { seedWorldMapData, updateIslandCoordinates } from './scripts/seed-world-map-data.js';
+import { seedWorldMapData, updateIslandCoordinates, initializeExistingUsers } from './scripts/seed-world-map-data.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -284,6 +284,9 @@ export const initializeApp = async (): Promise<express.Application> => {
         console.log(`✅ ${islandCount.count} îles déjà présentes, mise à jour des coordonnées...`);
         // Mettre à jour les coordonnées des îles à chaque démarrage
         await updateIslandCoordinates();
+
+        // Initialiser les utilisateurs existants qui n'ont pas encore leur île et Luffy
+        await initializeExistingUsers();
       }
     } catch (worldMapError) {
       console.warn('⚠️ Erreur lors de l\'initialisation de la carte du monde:', worldMapError);

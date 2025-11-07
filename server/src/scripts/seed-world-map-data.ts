@@ -477,6 +477,59 @@ async function seedWorldMapData() {
   }
 }
 
+/**
+ * Initialise uniquement les utilisateurs existants qui n'ont pas encore leur île et Luffy
+ * Utile pour corriger les utilisateurs créés avant l'implémentation de l'auto-initialisation
+ */
+async function initializeExistingUsers() {
+  try {
+    console.log('👥 Initialisation des utilisateurs existants...');
+
+    const users = await Database.all<{ id: string }>('SELECT id FROM users WHERE is_active = 1');
+
+    let usersInitialized = 0;
+
+    for (const user of users) {
+      let userNeedsInit = false;
+
+      // Vérifier si l'utilisateur a la première île
+      const hasFirstIsland = await Database.get(
+        'SELECT id FROM user_islands WHERE user_id = ? AND island_id = ?',
+        [user.id, 'island_windmill_village']
+      );
+
+      if (!hasFirstIsland) {
+        await WorldMapModel.unlockIsland(user.id, 'island_windmill_village');
+        userNeedsInit = true;
+      }
+
+      // Vérifier si l'utilisateur a Luffy
+      const hasLuffy = await Database.get(
+        'SELECT id FROM user_crew_members WHERE user_id = ? AND crew_member_id = ?',
+        [user.id, 'crew_luffy']
+      );
+
+      if (!hasLuffy) {
+        await WorldMapModel.unlockCrewMember(user.id, 'crew_luffy');
+        userNeedsInit = true;
+      }
+
+      if (userNeedsInit) {
+        usersInitialized++;
+      }
+    }
+
+    if (usersInitialized > 0) {
+      console.log(`✅ ${usersInitialized} utilisateur(s) initialisé(s) avec la première île et Luffy`);
+    } else {
+      console.log('✅ Tous les utilisateurs sont déjà initialisés');
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'initialisation des utilisateurs existants:', error);
+    throw error;
+  }
+}
+
 // Exécuter si appelé directement
 if (import.meta.url === `file://${process.argv[1]}`) {
   seedWorldMapData()
@@ -487,4 +540,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     });
 }
 
-export { seedWorldMapData, updateIslandCoordinates };
+export { seedWorldMapData, updateIslandCoordinates, initializeExistingUsers };

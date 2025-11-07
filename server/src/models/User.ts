@@ -1,6 +1,7 @@
 import { Database } from '../utils/database.js';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { WorldMapModel } from './WorldMap.js';
 
 export interface User {
   id: string;
@@ -45,6 +46,15 @@ export class UserModel {
     const user = await this.findById(id);
     if (!user) {
       throw new Error('Erreur lors de la création de l\'utilisateur');
+    }
+
+    // Initialiser le nouveau joueur avec la première île et Luffy
+    try {
+      await WorldMapModel.unlockIsland(id, 'island_windmill_village');
+      await WorldMapModel.unlockCrewMember(id, 'crew_luffy');
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation du nouveau joueur:', error);
+      // On ne bloque pas la création même si l'initialisation échoue
     }
 
     return user;
